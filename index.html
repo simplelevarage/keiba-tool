@@ -1,0 +1,640 @@
+```html
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Expectation Logic V18</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:10px;
+    background:#050a0c;
+    font-family:"Hiragino Sans","Meiryo",sans-serif;
+}
+
+.sl-tool-wrapper{
+    width:100%;
+    max-width:450px;
+    margin:0 auto;
+    background:linear-gradient(145deg,#d4af37,#8a6d3b);
+    padding:2px;
+    border-radius:20px;
+    box-shadow:0 15px 30px rgba(0,0,0,0.8);
+    box-sizing:border-box;
+}
+
+.sl-tool-inner{
+    background:#0a1114;
+    padding:15px 20px;
+    border-radius:18px;
+    color:#fff;
+    box-sizing:border-box;
+}
+
+h1{
+    text-align:center;
+    color:#ffde59;
+    margin:10px 0;
+    font-size:1.4rem;
+}
+
+.trinity-header{
+    font-size:1rem;
+    color:#ffde59;
+    margin:25px 0 12px;
+    padding-bottom:5px;
+    border-bottom:2px solid #33444d;
+    font-weight:900;
+}
+
+.input-group{
+    margin-bottom:15px;
+}
+
+label{
+    font-size:0.85rem;
+    color:#ccc;
+    display:block;
+    margin-bottom:5px;
+    font-weight:bold;
+}
+
+.sl-input{
+    width:100%;
+    height:50px;
+    padding:10px;
+    border-radius:8px;
+    background:#152229;
+    color:#fff;
+    border:1px solid #2c3e50;
+    font-size:16px;
+    box-sizing:border-box;
+    appearance:none;
+}
+
+.sl-btn{
+    width:100%;
+    padding:18px;
+    margin-top:10px;
+    border:none;
+    border-radius:12px;
+    color:#fff;
+    font-weight:900;
+    font-size:1.1rem;
+    cursor:pointer;
+}
+
+.calc-btn{
+    background:linear-gradient(135deg,#e60000 0%,#8b0000 100%);
+}
+
+.reset-btn{
+    background:#444;
+    font-size:0.9rem;
+    padding:12px;
+}
+
+.sl-result{
+    margin-top:25px;
+    padding:20px;
+    border-radius:15px;
+    display:none;
+    text-align:center;
+}
+
+.rank-1{
+    background:#000;
+    border:4px double #ff0000;
+    box-shadow:0 0 25px #ff0000;
+}
+
+.reason-box{
+    margin-top:15px;
+    padding:15px;
+    background:rgba(255,255,255,0.04);
+    border-radius:10px;
+    text-align:left;
+    font-size:0.9rem;
+    line-height:1.6;
+    border-left:4px solid #ffde59;
+}
+
+.bonus{
+    color:#ffde59;
+}
+
+.penalty{
+    color:#ff4444;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sl-tool-wrapper">
+<div class="sl-tool-inner">
+
+<h1>V18 Ultra Core Logic</h1>
+
+<div class="trinity-header">Ⅰ. 今回のレース条件</div>
+
+<div class="input-group">
+<label>単勝オッズ</label>
+<input type="number" id="v_win_odds" class="sl-input" step="0.1">
+</div>
+
+<div class="input-group">
+<label>単勝人気</label>
+<input type="number" id="v_win_rank" class="sl-input">
+</div>
+
+<div class="input-group">
+<label>複勝下限オッズ</label>
+<input type="number" id="v_pl_odds" class="sl-input" step="0.1">
+</div>
+
+<div class="input-group">
+<label>枠番</label>
+<select id="v_waku" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="1">1枠</option>
+<option value="2">2枠</option>
+<option value="3">3枠</option>
+<option value="4">4枠</option>
+<option value="5">5枠</option>
+<option value="6">6枠</option>
+<option value="7">7枠</option>
+<option value="8">8枠</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>今回の脚質</label>
+<select id="v_style" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="逃げ">逃げ</option>
+<option value="先行">先行</option>
+<option value="差し">差し</option>
+<option value="追込">追込</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>今回の騎手</label>
+<select id="v_jockey" class="sl-input">
+
+<option value="">-- 選択 --</option>
+
+<optgroup label="短期免許">
+<option value="moreira">モレイラ</option>
+<option value="lane">レーン</option>
+<option value="short_other">その他短期</option>
+</optgroup>
+
+<optgroup label="関西TOP">
+<option value="lemaire">ルメール</option>
+<option value="kawada">川田</option>
+<option value="iwata_mi">岩田望</option>
+<option value="matsuyama">松山</option>
+<option value="nishimura">西村淳</option>
+</optgroup>
+
+<optgroup label="関東TOP">
+<option value="yokoyama_t">横山武</option>
+<option value="tosaki">戸崎</option>
+<option value="tannai">丹内</option>
+<option value="tsumura">津村</option>
+<option value="yokoyama_k">横山和</option>
+</optgroup>
+
+<optgroup label="期待値UP">
+<option value="iwata_y">岩田康</option>
+<option value="take">武豊</option>
+<option value="sakai">坂井</option>
+<option value="sugawara">菅原明</option>
+<option value="sasaki">佐々木</option>
+<option value="hara">原</option>
+<option value="takasugi">高杉</option>
+</optgroup>
+
+<option value="other">その他</option>
+
+</select>
+</div>
+
+<div class="trinity-header">Ⅱ. 前走評価</div>
+
+<div class="input-group">
+<label>前走馬場状態</label>
+<select id="v_prev_cond" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="良">良</option>
+<option value="稍重">稍重</option>
+<option value="重">重</option>
+<option value="不良">不良</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>前走人気</label>
+<input type="number" id="v_prev_rank" class="sl-input">
+</div>
+
+<div class="input-group">
+<label>前走着順</label>
+<select id="v_prev_order" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="1">1着</option>
+<option value="2">2着</option>
+<option value="3">3着</option>
+<option value="4">4着</option>
+<option value="5">5着</option>
+<option value="6">6着</option>
+<option value="7">7着</option>
+<option value="8">8着</option>
+<option value="9">9着</option>
+<option value="10">10着以下</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>前走着差</label>
+<select id="v_prev_diff_range" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="0.2">0.0〜0.2秒</option>
+<option value="0.5">0.3〜0.5秒</option>
+<option value="0.8">0.6〜0.8秒</option>
+<option value="1.0">1.0秒以上</option>
+</select>
+</div>
+
+<div class="trinity-header">Ⅲ. 地力・実績評価</div>
+
+<div class="input-group">
+<label>過去3走のG1回数</label>
+<select id="v_g1_count" class="sl-input">
+<option value="">-- 選択 --</option>
+<option value="0">0回</option>
+<option value="1">1回</option>
+<option value="2">2回</option>
+<option value="3">3回</option>
+</select>
+</div>
+
+<div class="input-group">
+<label>過去3走人気合計</label>
+<input type="number" id="v_p3_sum" class="sl-input">
+</div>
+
+<button id="calc_v17" class="sl-btn calc-btn">
+期待値を判定
+</button>
+
+<div id="res_v17" class="sl-result">
+
+<div id="res_main" style="font-size:2.5rem;font-weight:900;"></div>
+
+<div id="res_reason" class="reason-box"></div>
+
+<div id="res_score" style="margin-top:15px;color:#888;font-size:0.8rem;"></div>
+
+</div>
+
+<button id="reset_v17" class="sl-btn reset-btn">
+リセット
+</button>
+
+</div>
+</div>
+
+<script>
+
+const inputs = [
+'v_win_odds',
+'v_win_rank',
+'v_pl_odds',
+'v_waku',
+'v_jockey',
+'v_style',
+'v_prev_cond',
+'v_prev_rank',
+'v_prev_order',
+'v_prev_diff_range',
+'v_g1_count',
+'v_p3_sum'
+];
+
+document.getElementById('calc_v17').addEventListener('click', function() {
+
+    let s = 100;
+    let V = 1;
+    let reasons = [];
+
+    const wOdds = Number(document.getElementById('v_win_odds').value);
+    const wRank = Number(document.getElementById('v_win_rank').value);
+    const pOdds = Number(document.getElementById('v_pl_odds').value);
+
+    const prO = Number(document.getElementById('v_prev_order').value);
+    const prD = Number(document.getElementById('v_prev_diff_range').value);
+    const prRank_raw = Number(document.getElementById('v_prev_rank').value);
+
+    const prevCond = document.getElementById('v_prev_cond').value;
+    const style = document.getElementById('v_style').value;
+    const jID = document.getElementById('v_jockey').value;
+    const waku = Number(document.getElementById('v_waku').value);
+
+    const g1 = Number(document.getElementById('v_g1_count').value);
+    let p3 = Number(document.getElementById('v_p3_sum').value);
+
+    let prRank = prRank_raw;
+
+    // =========================
+    // G1補正
+    // =========================
+
+    if(g1 >= 1){
+
+        let coef = g1 == 1 ? 0.7 :
+                   g1 == 2 ? 0.6 : 0.5;
+
+        prRank = prRank_raw * coef;
+        p3 = p3 * coef;
+
+        reasons.push("<span class='bonus'>G1出走補正あり</span>");
+    }
+
+    // =========================
+    // 重馬場フィルター
+    // =========================
+
+    let ignorePrev = false;
+
+    if(prevCond === "重" || prevCond === "不良"){
+
+        ignorePrev = true;
+
+        reasons.push("<span class='bonus'>前走重馬場→度外視</span>");
+    }
+
+    // =========================
+    // 実力評価
+    // =========================
+
+    if(prRank <= 3){
+
+        s += 60;
+
+        reasons.push("<span class='bonus'>前走上位人気＝地力あり</span>");
+    }
+
+    if(p3 <= 10){
+
+        s += 40;
+
+        reasons.push("<span class='bonus'>近走安定人気＝実力あり</span>");
+    }
+
+    if(g1 >= 1){
+
+        s += g1 * 20;
+    }
+
+    // =========================
+    // 前走パフォーマンス
+    // =========================
+
+    if(!ignorePrev){
+
+        if(style === "逃げ"){
+
+            if(prO >= 7 || prD >= 1.0){
+
+                s += 100;
+
+                reasons.push("<span class='bonus'>逃げ馬の巻き返し</span>");
+            }
+
+        }else{
+
+            if(prO >= 6){
+
+                s += 40;
+
+                reasons.push("<span class='bonus'>凡走による妙味</span>");
+            }
+
+            if(prD <= 0.2){
+
+                s += 80;
+
+                reasons.push("<span class='bonus'>着差優秀</span>");
+            }
+
+            if(prD >= 0.8){
+
+                s -= 60;
+
+                reasons.push("<span class='penalty'>前走大敗</span>");
+            }
+        }
+    }
+
+    // =========================
+    // 妙味ゾーン
+    // =========================
+
+    if(wRank >= 4 && wRank <= 9){
+
+        V *= 1.25;
+
+        reasons.push("<span class='bonus'>狙いゾーン（中穴）</span>");
+    }
+
+    if(prRank <= 3 && wRank >= 6){
+
+        V *= 1.25;
+
+        reasons.push("<span class='bonus'>人気落ち妙味</span>");
+    }
+
+    if(pOdds >= 3){
+
+        V *= 1.1;
+
+        reasons.push("<span class='bonus'>複勝妙味</span>");
+    }
+
+    // =========================
+    // 人気リスク
+    // =========================
+
+    if(wRank === 1){
+
+        V *= 0.5;
+
+        reasons.push("<span class='penalty'>1番人気</span>");
+    }
+
+    if(wRank === 2){
+
+        V *= 0.6;
+
+        reasons.push("<span class='penalty'>2番人気</span>");
+    }
+
+    if(wRank === 3){
+
+        V *= 0.7;
+
+        reasons.push("<span class='penalty'>3番人気</span>");
+    }
+
+    if(wRank >= 10){
+
+        V *= 0.6;
+
+        reasons.push("<span class='penalty'>大穴</span>");
+    }
+
+    // =========================
+    // 騎手補正
+    // =========================
+
+    const tanki = ['moreira','lane','short_other'];
+
+    const kansai = [
+        'lemaire',
+        'kawada',
+        'iwata_mi',
+        'matsuyama',
+        'nishimura'
+    ];
+
+    const kanto = [
+        'yokoyama_t',
+        'tosaki',
+        'tannai',
+        'tsumura',
+        'yokoyama_k'
+    ];
+
+    const kitai = [
+        'iwata_y',
+        'take',
+        'sakai',
+        'sugawara',
+        'sasaki',
+        'hara',
+        'takasugi'
+    ];
+
+    if(tanki.includes(jID)){
+
+        s += 45;
+
+    }else if(kansai.includes(jID)){
+
+        s += 40;
+
+    }else if(kanto.includes(jID)){
+
+        s += 35;
+
+    }else if(kitai.includes(jID)){
+
+        s += 30;
+    }
+
+    // 岩田康 × 内枠
+
+    if(jID === 'iwata_y' && (waku === 1 || waku === 2)){
+
+        s += 50;
+
+        reasons.push("<span class='bonus'>岩田×内枠</span>");
+    }
+
+    // =========================
+    // 最終スコア
+    // =========================
+
+    let fs = Math.round(s * V);
+
+    const resArea = document.getElementById('res_v17');
+    const resMain = document.getElementById('res_main');
+
+    resArea.style.display = 'block';
+
+    document.getElementById('res_score').innerText =
+    "V18 Score : " + fs + "pt";
+
+    document.getElementById('res_reason').innerHTML =
+    reasons.map(r => "・" + r).join("<br>");
+
+    // =========================
+    // 判定
+    // =========================
+
+    if(fs >= 400 && wRank >= 5 && pOdds >= 3.5){
+
+        resArea.className = "sl-result rank-1";
+        resArea.style.display = "block";
+
+        resMain.innerText = "🔥 激アツ";
+        resMain.style.color = "#ff0000";
+
+    }else if(fs >= 240){
+
+        resArea.className = "sl-result";
+        resArea.style.display = "block";
+
+        resMain.innerText = "◎ 期待値アリ";
+        resMain.style.color = "#ffde59";
+
+    }else{
+
+        resArea.className = "sl-result";
+        resArea.style.display = "block";
+
+        resMain.innerText = "✕ 見送り";
+        resMain.style.color = "#888";
+    }
+
+    resArea.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+    });
+
+});
+
+document.getElementById('reset_v17').addEventListener('click', function() {
+
+    inputs.forEach(id => {
+
+        const el = document.getElementById(id);
+
+        if(el && el.tagName === 'SELECT'){
+
+            el.selectedIndex = 0;
+
+        }else if(el){
+
+            el.value = '';
+        }
+
+    });
+
+    document.getElementById('res_v17').style.display = 'none';
+
+});
+
+</script>
+
+</body>
+</html>
+```
