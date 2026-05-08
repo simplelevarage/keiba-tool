@@ -1,249 +1,758 @@
+<script>
+
 // =========================
-// 人気ゾーン
+// 統計ベース
 // =========================
 
-if(wRank >= 4 && wRank <= 9){
+const stats = {
+    winRate: [0,32.8,19.0,13.5,9.2,7.5,5.8,4.5,3.5,2.6,2.0,1.5,1.2,0.8,0.6,0.4,0.3,0.2,0.1],
+    avgWinOdds: [0,2.4,4.4,6.4,9.2,12.5,17.5,24.5,34.0,46.0,62.0,85.0,110.0,150.0,200.0,260.0,340.0,430.0,550.0],
+    avgPlOdds: [0,1.1,1.2,1.3,1.5,1.8,2.2,2.8,3.6,4.8,6.5,9.0,12.0,16.0,22.0,30.0,40.0,55.0,75.0]
+};
 
-    BONUS *= 1.10;
-    coreHit++;
+// =========================
+// レースレベル
+// =========================
 
-    reasons.push(
-        "<span class='bonus'>黄金期待値ゾーン</span>"
-    );
-}
+const classPower = {
+    "平場":1,
+    "OP":2,
+    "G23":3,
+    "G1":4
+};
 
-else if(wRank <= 3){
+// =========================
+// 判定開始
+// =========================
+
+document.getElementById('calc_v17').addEventListener('click', function () {
+
+    let EV = 100;
+    let BONUS = 1.0;
+    let reasons = [];
+    let coreHit = 0;
+    let crushWin = false;
 
     // =========================
-    // 上位人気減点緩和
-    // 0.88 → 0.92
+    // 値取得
     // =========================
 
-    BONUS *= 0.92;
+    const curClass = document.getElementById('v_cur_class').value;
+    const surface = document.getElementById('v_surface').value;
+    const dist = document.getElementById('v_dist').value;
+    const curCond = document.getElementById('v_cur_cond').value;
+    const waku = Number(document.getElementById('v_waku').value);
 
-    reasons.push(
-        "<span class='penalty'>上位人気</span>"
+    const wRank = Math.min(
+        18,
+        Math.max(
+            1,
+            Number(document.getElementById('v_win_rank').value)
+        )
     );
-}
 
-else if(wRank >= 10){
+    const wOdds = Number(document.getElementById('v_win_odds').value);
+    const pOdds = Number(document.getElementById('v_pl_odds').value);
 
-    if(curClass !== "G1"){
+    const jID = document.getElementById('v_jockey').value;
+    const style = document.getElementById('v_style').value;
 
-        BONUS *= 0.86;
+    const prevClass = document.getElementById('v_prev_class').value;
+    const prevCond = document.getElementById('v_prev_cond').value;
+    const prevRank = Number(document.getElementById('v_prev_rank').value);
+
+    const prO = Number(document.getElementById('v_prev_order').value);
+    const prD = Number(document.getElementById('v_prev_diff_range').value);
+
+    const g1 = Number(document.getElementById('v_g1_count').value);
+    const p3 = Number(document.getElementById('v_p3_sum').value);
+
+    // =========================
+    // 入力確認
+    // =========================
+
+    if (
+        !curClass ||
+        !prevClass ||
+        !wRank ||
+        !wOdds ||
+        !prevRank ||
+        !style ||
+        !jID
+    ) {
+
+        alert("主要項目を入力してください");
+        return;
+    }
+
+    // =========================
+    // 市場乖離
+    // =========================
+
+    if (prevRank <= 3 && wRank >= 4) {
+
+        EV += 65;
+        coreHit++;
 
         reasons.push(
-            "<span class='penalty'>10番人気以下</span>"
+            "<span class='bonus'>【市場乖離】前走上位人気 → 今回人気落ち</span>"
         );
     }
-}
-
-// =========================
-// 人気密集補正
-// =========================
-
-if(
-    wRank >= 4 &&
-    wRank <= 6 &&
-    wOdds < stats.avgWinOdds[wRank] * 0.8
-){
 
     // =========================
-    // 0.86 → 0.92
+    // 前走人気補正
     // =========================
 
-    BONUS *= 0.92;
+    if (prevRank === 1) {
 
-    reasons.push(
-        "<span class='penalty'>人気密集：期待値低下ゾーン</span>"
-    );
-}
+        EV += 40;
 
-// =========================
-// 前走大敗（逃げ）
-// =========================
+        reasons.push(
+            "<span class='bonus'>前走1人気：能力評価高</span>"
+        );
 
-if(prO >= 10){
-
-    if(style === "逃げ"){
+    } else if (prevRank === 2) {
 
         EV += 30;
 
         reasons.push(
-            "<span class='bonus'>逃げ馬大敗：巻き返し余地</span>"
+            "<span class='bonus'>前走2人気：能力評価</span>"
         );
 
-        // =========================
-        // 逃げ暴走抑制緩和
-        // -30 → -20
-        // =========================
+    } else if (prevRank === 3) {
 
-        if(wRank >= 10){
+        EV += 20;
 
-            EV -= 20;
+        reasons.push(
+            "<span class='bonus'>前走3人気：能力評価</span>"
+        );
+    }
+
+    // =========================
+    // 道悪無視
+    // =========================
+
+    let ignorePrev = false;
+
+    if (prevCond === "重" || prevCond === "不良") {
+
+        ignorePrev = true;
+
+        reasons.push(
+            "<span class='bonus'>前走道悪：内容完全無視</span>"
+        );
+    }
+
+    // =========================
+    // 前走着順
+    // =========================
+
+    if (!ignorePrev) {
+
+        if (prO === 7) {
+
+            EV += 90;
+            coreHit++;
 
             reasons.push(
-                "<span class='penalty'>人気薄逃げ暴走：期待値低下</span>"
+                "<span class='bonus'>【7着理論】期待値最大ゾーン</span>"
+            );
+
+        } else if (prO === 6 || prO === 8) {
+
+            EV += 65;
+
+        } else if (prO >= 4 && prO <= 9) {
+
+            EV += 45;
+
+        } else if (prO >= 10) {
+
+            if (style === "逃げ") {
+
+                EV += 30;
+
+                reasons.push(
+                    "<span class='bonus'>逃げ馬大敗：巻き返し余地</span>"
+                );
+
+                if (wRank >= 10) {
+
+                    EV -= 20;
+
+                    reasons.push(
+                        "<span class='penalty'>人気薄逃げ暴走：期待値低下</span>"
+                    );
+                }
+
+            } else {
+
+                EV -= 35;
+
+                reasons.push(
+                    "<span class='penalty'>前走大敗</span>"
+                );
+            }
+        }
+    }
+
+    // =========================
+    // 着差
+    // =========================
+
+    if (!ignorePrev) {
+
+        if (prO !== 1) {
+
+            if (prD <= 0.2) {
+
+                EV += 85;
+                coreHit++;
+
+                reasons.push(
+                    "<span class='bonus'>前走僅差：着順以上の内容</span>"
+                );
+
+            } else if (prD >= 1.0) {
+
+                if (style === "逃げ") {
+
+                    EV += 35;
+
+                    reasons.push(
+                        "<span class='bonus'>逃げ馬1秒負け：展開不利型</span>"
+                    );
+
+                } else {
+
+                    EV -= 55;
+
+                    reasons.push(
+                        "<span class='penalty'>1秒以上負け</span>"
+                    );
+                }
+            }
+
+        } else {
+
+            if (prD >= 0.3) {
+
+                crushWin = true;
+
+                EV += 50;
+                coreHit++;
+
+                reasons.push(
+                    "<span class='bonus'>前走圧勝：能力突破型</span>"
+                );
+            }
+        }
+    }
+
+    // =========================
+    // レースレベル変化
+    // =========================
+
+    let classGap =
+        classPower[prevClass] -
+        classPower[curClass];
+
+    // 格下げ
+
+    if (classGap >= 1) {
+
+        EV += 40;
+
+        reasons.push(
+            "<span class='bonus'>格下げローテ：相手弱化</span>"
+        );
+
+        if (prevClass === "G1") {
+
+            EV += 20;
+
+            reasons.push(
+                "<span class='bonus'>G1帰り：市場過小評価ゾーン</span>"
+            );
+        }
+    }
+
+    // 格上げ
+
+    if (classGap <= -1) {
+
+        if (crushWin) {
+
+            EV -= 5;
+
+            reasons.push(
+                "<span class='bonus'>圧勝昇級：格上げ減点軽減</span>"
+            );
+
+        } else {
+
+            EV -= 25;
+
+            reasons.push(
+                "<span class='penalty'>格上げローテ</span>"
+            );
+        }
+    }
+
+    // =========================
+    // 単勝偏差
+    // =========================
+
+    let avgWin = stats.avgWinOdds[wRank];
+    let winDiff = wOdds - avgWin;
+
+    if (winDiff >= avgWin * 0.25) {
+
+        BONUS *= 1.12;
+        coreHit++;
+
+        reasons.push(
+            "<span class='bonus'>単勝妙味：平均以上に売れていない</span>"
+        );
+
+    } else if (winDiff <= -(avgWin * 0.25)) {
+
+        BONUS *= 0.92;
+
+        reasons.push(
+            "<span class='penalty'>単勝過剰人気気味</span>"
+        );
+    }
+
+    // =========================
+    // 複勝偏差
+    // =========================
+
+    let avgPl = stats.avgPlOdds[wRank];
+    let plDiff = pOdds - avgPl;
+
+    if (plDiff >= avgPl * 0.25) {
+
+        BONUS *= 1.08;
+
+        reasons.push(
+            "<span class='bonus'>複勝妙味あり</span>"
+        );
+
+    } else if (plDiff <= -(avgPl * 0.25)) {
+
+        BONUS *= 0.95;
+
+        reasons.push(
+            "<span class='penalty'>複勝支持強め</span>"
+        );
+    }
+
+    // =========================
+    // 人気ゾーン
+    // =========================
+
+    if (wRank >= 4 && wRank <= 9) {
+
+        BONUS *= 1.10;
+        coreHit++;
+
+        reasons.push(
+            "<span class='bonus'>黄金期待値ゾーン</span>"
+        );
+
+    } else if (wRank <= 3) {
+
+        BONUS *= 0.92;
+
+        reasons.push(
+            "<span class='penalty'>上位人気</span>"
+        );
+
+    } else if (wRank >= 10) {
+
+        if (curClass !== "G1") {
+
+            BONUS *= 0.86;
+
+            reasons.push(
+                "<span class='penalty'>10番人気以下</span>"
+            );
+        }
+    }
+
+    // =========================
+    // 人気密集補正
+    // =========================
+
+    if (
+        wRank >= 4 &&
+        wRank <= 6 &&
+        wOdds < stats.avgWinOdds[wRank] * 0.8
+    ) {
+
+        BONUS *= 0.92;
+
+        reasons.push(
+            "<span class='penalty'>人気密集：期待値低下ゾーン</span>"
+        );
+    }
+
+    // =========================
+    // 騎手補正
+    // =========================
+
+    if (jID === 'moreira') {
+
+        BONUS *= 1.12;
+
+        reasons.push(
+            "<span class='bonus'>モレイラ補正</span>"
+        );
+    }
+
+    else if (jID === 'lane' || jID === 'short_other') {
+
+        BONUS *= 1.08;
+    }
+
+    else if (jID === 'lemaire') {
+
+        BONUS *= 1.07;
+
+        if (style === "先行" || style === "差し") {
+            BONUS *= 1.04;
+        }
+
+        if (wRank >= 6) {
+            BONUS *= 0.94;
+        }
+    }
+
+    else if (jID === 'kawada') {
+
+        BONUS *= 1.07;
+
+        if (style === "先行") {
+            BONUS *= 1.05;
+        }
+    }
+
+    else if (jID === 'iwata_mi') {
+
+        BONUS *= 1.05;
+
+        if (dist === "long") {
+            BONUS *= 1.06;
+        }
+    }
+
+    else if (jID === 'iwata_y') {
+
+        BONUS *= 1.05;
+
+        if (waku <= 2) {
+
+            BONUS *= 1.10;
+
+            reasons.push(
+                "<span class='bonus'>岩田康×内枠</span>"
             );
         }
 
-    }else{
+        if (style === "差し" || style === "追込") {
+            BONUS *= 1.04;
+        }
+    }
 
-        EV -= 35;
+    else if (jID === 'take') {
+
+        BONUS *= 1.05;
+
+        if (style === "逃げ") {
+
+            BONUS *= 1.08;
+
+            reasons.push(
+                "<span class='bonus'>武豊×逃げ</span>"
+            );
+        }
+
+        if (dist === "long") {
+
+            BONUS *= 1.05;
+
+            reasons.push(
+                "<span class='bonus'>武豊×長距離</span>"
+            );
+        }
+    }
+
+    else if (jID === 'sakai') {
+
+        BONUS *= 1.05;
+
+        if (style === "逃げ" || style === "先行") {
+            BONUS *= 1.05;
+        }
+
+        if (surface === "ダート" && curClass === "G1") {
+            BONUS *= 1.08;
+        }
+
+        if (surface === "芝" && curClass === "G1") {
+            BONUS *= 0.94;
+        }
+    }
+
+    else if (jID === 'sugawara') {
+
+        BONUS *= 1.04;
+
+        if (style === "差し" || style === "追込") {
+            BONUS *= 1.05;
+        }
+
+        if (curCond === "重" || curCond === "不良") {
+            BONUS *= 1.05;
+        }
+    }
+
+    else if (jID === 'hara') {
+
+        BONUS *= 1.04;
+
+        if (style === "差し" || style === "追込") {
+            BONUS *= 1.06;
+        }
+    }
+
+    else if (
+        [
+            'yokoyama_t',
+            'tosaki',
+            'tannai',
+            'matsuyama',
+            'nishimura',
+            'sasaki',
+            'takasugi',
+            'tsumura',
+            'yokoyama_k'
+        ].includes(jID)
+    ) {
+
+        BONUS *= 1.04;
+    }
+
+    // =========================
+    // G1経験
+    // =========================
+
+    if (g1 >= 1) {
+
+        BONUS *= (1 + (g1 * 0.03));
 
         reasons.push(
-            "<span class='penalty'>前走大敗</span>"
+            "<span class='bonus'>G1経験補正</span>"
         );
     }
-}
 
-// =========================
-// 判定
-// =========================
-
-if(
     // =========================
-    // 400 → 370
+    // 近走人気
     // =========================
 
-    fs >= 370 &&
-    coreHit >= 3 &&
-    wRank >= 4 &&
-    wRank <= 9
-){
+    if (p3 <= 10) {
 
-    resArea.className = "sl-result rank-1";
+        BONUS *= 1.05;
 
-    resMain.innerHTML = `
-        <div style="
-            font-size:32px;
-            font-weight:bold;
-            color:#ff0000;
-            margin-bottom:10px;
-        ">
-            🔥 激アツ期待値馬
-        </div>
+        reasons.push(
+            "<span class='bonus'>近走人気安定</span>"
+        );
+    }
 
-        <div style="
-            font-size:18px;
-            color:#ffd6d6;
-            line-height:1.8;
-        ">
-            ・全券種で購入推奨<br>
-            ・期待値本命級<br>
-            ・市場評価とのズレ大
-        </div>
-    `;
-}
+    // =========================
+    // CORE重複
+    // =========================
 
-else if(fs >= 300){
+    if (coreHit >= 4) {
 
-    resArea.className = "sl-result";
+        BONUS *= 1.08;
 
-    resMain.innerHTML = `
-        <div style="
-            font-size:28px;
-            font-weight:bold;
-            color:#ffde59;
-            margin-bottom:10px;
-        ">
-            ◎ 高期待値馬
-        </div>
+        reasons.push(
+            "<span class='bonus'>CORE条件複数一致</span>"
+        );
+    }
 
-        <div style="
-            font-size:17px;
-            color:#fff2a8;
-            line-height:1.8;
-        ">
-            ・1〜2着候補<br>
-            ・馬連軸向き<br>
-            ・期待値バランス良好
-        </div>
-    `;
-}
+    if (coreHit >= 6) {
 
-else if(fs >= 220){
+        BONUS *= 1.05;
 
-    resArea.className = "sl-result";
+        reasons.push(
+            "<span class='bonus'>期待値条件大量一致</span>"
+        );
+    }
 
-    resMain.innerHTML = `
-        <div style="
-            font-size:26px;
-            font-weight:bold;
-            color:#7ec8ff;
-            margin-bottom:10px;
-        ">
-            ○ 相手候補
-        </div>
+    // =========================
+    // BONUS暴走防止
+    // =========================
 
-        <div style="
-            font-size:16px;
-            color:#d9f1ff;
-            line-height:1.8;
-        ">
-            ・2〜3着候補<br>
-            ・3連系で押さえ推奨<br>
-            ・ヒモ穴期待あり
-        </div>
-    `;
-}
+    if (BONUS > 1.85) {
+        BONUS = 1.85;
+    }
+
+    // =========================
+    // 最終スコア
+    // =========================
+
+    let fs = Math.round(EV * BONUS);
+
+    const resArea = document.getElementById('res_v17');
+    const resMain = document.getElementById('res_main');
+
+    resArea.style.display = 'block';
+
+    document.getElementById('res_score').innerText =
+        "V19.2 Score : " + fs + "pt";
+
+    document.getElementById('res_reason').innerHTML =
+        reasons.map(r => "・" + r).join("<br>");
+
+    // =========================
+    // 判定表示
+    // =========================
+
+    if (
+        fs >= 370 &&
+        coreHit >= 3 &&
+        wRank >= 4 &&
+        wRank <= 9
+    ) {
+
+        resArea.className = "sl-result rank-1";
+
+        resMain.innerHTML = `
+            <div style="font-size:32px;font-weight:bold;color:#ff0000;margin-bottom:10px;">
+                🔥 激アツ期待値馬
+            </div>
+
+            <div style="font-size:18px;color:#ffd6d6;line-height:1.8;">
+                ・全券種で購入推奨<br>
+                ・期待値本命級<br>
+                ・市場評価とのズレ大
+            </div>
+        `;
+
+    }
+
+    else if (fs >= 300) {
+
+        resArea.className = "sl-result";
+
+        resMain.innerHTML = `
+            <div style="font-size:28px;font-weight:bold;color:#ffde59;margin-bottom:10px;">
+                ◎ 高期待値馬
+            </div>
+
+            <div style="font-size:17px;color:#fff2a8;line-height:1.8;">
+                ・1〜2着候補<br>
+                ・馬連軸向き<br>
+                ・期待値バランス良好
+            </div>
+        `;
+
+    }
+
+    else if (fs >= 220) {
+
+        resArea.className = "sl-result";
+
+        resMain.innerHTML = `
+            <div style="font-size:26px;font-weight:bold;color:#7ec8ff;margin-bottom:10px;">
+                ○ 相手候補
+            </div>
+
+            <div style="font-size:16px;color:#d9f1ff;line-height:1.8;">
+                ・2〜3着候補<br>
+                ・3連系で押さえ推奨<br>
+                ・ヒモ穴期待あり
+            </div>
+        `;
+
+    }
+
+    else if (
+        wRank <= 3 &&
+        fs >= 180 &&
+        coreHit <= 2
+    ) {
+
+        resArea.className = "sl-result";
+
+        resMain.innerHTML = `
+            <div style="font-size:24px;font-weight:bold;color:#ff9f43;margin-bottom:10px;">
+                ▲ 実力はあるが低期待値馬
+            </div>
+
+            <div style="font-size:15px;color:#ffe0bf;line-height:1.8;">
+                ・能力上位だが人気先行<br>
+                ・単体購入は非推奨<br>
+                ・相手次第で期待値発生
+            </div>
+        `;
+
+    }
+
+    else {
+
+        resArea.className = "sl-result";
+
+        resMain.innerHTML = `
+            <div style="font-size:22px;font-weight:bold;color:#888;margin-bottom:10px;">
+                ✕ 見送り
+            </div>
+
+            <div style="font-size:15px;color:#bbb;line-height:1.8;">
+                ・期待値不足<br>
+                ・市場評価と能力が概ね一致<br>
+                ・積極購入は非推奨
+            </div>
+        `;
+    }
+
+    // =========================
+    // スクロール
+    // =========================
+
+    resArea.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+
+});
 
 // =========================
-// 実力はあるが低期待値馬
+// リセット
 // =========================
 
-else if(
-    wRank <= 3 &&
-    fs >= 180 &&
-    coreHit <= 2
-){
+document.getElementById('reset_v17').addEventListener('click', function () {
 
-    resArea.className = "sl-result";
+    const selects = document.querySelectorAll('select');
 
-    resMain.innerHTML = `
-        <div style="
-            font-size:24px;
-            font-weight:bold;
-            color:#ff9f43;
-            margin-bottom:10px;
-        ">
-            ▲ 実力はあるが低期待値馬
-        </div>
+    selects.forEach(s => {
+        s.selectedIndex = 0;
+    });
 
-        <div style="
-            font-size:15px;
-            color:#ffe0bf;
-            line-height:1.8;
-        ">
-            ・能力上位だが人気先行<br>
-            ・単体購入は非推奨<br>
-            ・相手次第で期待値発生
-        </div>
-    `;
-}
+    const inputs =
+        document.querySelectorAll('input[type="number"]');
 
-else{
+    inputs.forEach(i => {
+        i.value = '';
+    });
 
-    resArea.className = "sl-result";
+    document.getElementById('res_v17').style.display = 'none';
 
-    resMain.innerHTML = `
-        <div style="
-            font-size:22px;
-            font-weight:bold;
-            color:#888;
-            margin-bottom:10px;
-        ">
-            ✕ 見送り
-        </div>
+    window.scrollTo(0, 0);
 
-        <div style="
-            font-size:15px;
-            color:#bbb;
-            line-height:1.8;
-        ">
-            ・期待値不足<br>
-            ・市場評価と能力が概ね一致<br>
-            ・積極購入は非推奨
-        </div>
-    `;
-}
+});
+
+</script>
