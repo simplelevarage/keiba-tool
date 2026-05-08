@@ -31,7 +31,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     let BONUS = 1.0;
     let reasons = [];
     let coreHit = 0;
-    let crushWin = false;
+    let judgeComment = "";
 
     // =========================
     // 値取得
@@ -43,13 +43,9 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     const curCond = document.getElementById('v_cur_cond').value;
     const waku = Number(document.getElementById('v_waku').value);
 
-    const wRank = Math.min(
-        18,
-        Math.max(
-            1,
-            Number(document.getElementById('v_win_rank').value)
-        )
-    );
+    const wRank = Math.min(18, Math.max(1,
+        Number(document.getElementById('v_win_rank').value)
+    ));
 
     const wOdds = Number(document.getElementById('v_win_odds').value);
     const pOdds = Number(document.getElementById('v_pl_odds').value);
@@ -59,8 +55,8 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
     const prevClass = document.getElementById('v_prev_class').value;
     const prevCond = document.getElementById('v_prev_cond').value;
-    const prevRank = Number(document.getElementById('v_prev_rank').value);
 
+    const prevRank = Number(document.getElementById('v_prev_rank').value);
     const prO = Number(document.getElementById('v_prev_order').value);
     const prD = Number(document.getElementById('v_prev_diff_range').value);
 
@@ -85,7 +81,13 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     }
 
     // =========================
-    // 前走人気 → 今回人気落ち
+    // 圧勝判定
+    // =========================
+
+    let crushWin = false;
+
+    // =========================
+    // 人気乖離
     // =========================
 
     if(prevRank <= 3 && wRank >= 4){
@@ -94,33 +96,35 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         coreHit++;
 
         reasons.push(
-            "<span class='bonus'>市場乖離：前走人気 → 今回人気落ち</span>"
+            "<span class='bonus'>【市場乖離】前走人気→今回人気落ち</span>"
         );
     }
 
     // =========================
-    // 前走人気能力評価
+    // 前走人気評価
     // =========================
 
     if(prevRank === 1){
 
-        EV += 30;
+        EV += 35;
 
         reasons.push(
             "<span class='bonus'>前走1人気：能力評価高</span>"
         );
+    }
 
-    }else if(prevRank === 2){
+    else if(prevRank === 2){
 
-        EV += 22;
+        EV += 25;
 
         reasons.push(
             "<span class='bonus'>前走2人気：能力評価</span>"
         );
+    }
 
-    }else if(prevRank === 3){
+    else if(prevRank === 3){
 
-        EV += 15;
+        EV += 18;
 
         reasons.push(
             "<span class='bonus'>前走3人気：能力評価</span>"
@@ -154,22 +158,25 @@ document.getElementById('calc_v17').addEventListener('click', function() {
             coreHit++;
 
             reasons.push(
-                "<span class='bonus'>7着理論：期待値ゾーン</span>"
+                "<span class='bonus'>【7着理論】期待値ゾーン</span>"
             );
+        }
 
-        }else if(prO === 6 || prO === 8){
+        else if(prO === 6 || prO === 8){
 
-            EV += 60;
+            EV += 55;
+        }
 
-        }else if(prO >= 4 && prO <= 9){
+        else if(prO >= 4 && prO <= 9){
 
-            EV += 40;
+            EV += 38;
+        }
 
-        }else if(prO >= 10){
+        else if(prO >= 10){
 
             if(style === "逃げ"){
 
-                EV += 20;
+                EV += 18;
 
                 reasons.push(
                     "<span class='bonus'>逃げ大敗：巻き返し余地</span>"
@@ -177,16 +184,16 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
                 if(wRank >= 10){
 
-                    EV -= 25;
+                    EV -= 18;
 
                     reasons.push(
-                        "<span class='penalty'>人気薄逃げ暴走注意</span>"
+                        "<span class='penalty'>人気薄逃げ：過剰期待注意</span>"
                     );
                 }
 
             }else{
 
-                EV -= 35;
+                EV -= 28;
 
                 reasons.push(
                     "<span class='penalty'>前走大敗</span>"
@@ -205,11 +212,11 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
             if(prD <= 0.2){
 
-                EV += 80;
+                EV += 75;
                 coreHit++;
 
                 reasons.push(
-                    "<span class='bonus'>前走僅差</span>"
+                    "<span class='bonus'>前走僅差：内容優秀</span>"
                 );
             }
 
@@ -220,12 +227,12 @@ document.getElementById('calc_v17').addEventListener('click', function() {
                     EV += 25;
 
                     reasons.push(
-                        "<span class='bonus'>逃げ1秒負け</span>"
+                        "<span class='bonus'>逃げ1秒負け：展開不利</span>"
                     );
 
                 }else{
 
-                    EV -= 50;
+                    EV -= 45;
 
                     reasons.push(
                         "<span class='penalty'>1秒以上負け</span>"
@@ -250,7 +257,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     }
 
     // =========================
-    // クラス変化
+    // クラス変動
     // =========================
 
     let classGap =
@@ -287,7 +294,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
         }else{
 
-            EV -= 20;
+            EV -= 22;
 
             reasons.push(
                 "<span class='penalty'>格上げローテ</span>"
@@ -310,8 +317,9 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         reasons.push(
             "<span class='bonus'>単勝妙味</span>"
         );
+    }
 
-    }else if(winDiff <= -(avgWin * 0.25)){
+    else if(winDiff <= -(avgWin * 0.25)){
 
         BONUS *= 0.93;
 
@@ -334,8 +342,9 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         reasons.push(
             "<span class='bonus'>複勝妙味</span>"
         );
+    }
 
-    }else if(plDiff <= -(avgPl * 0.25)){
+    else if(plDiff <= -(avgPl * 0.25)){
 
         BONUS *= 0.96;
 
@@ -345,7 +354,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     }
 
     // =========================
-    // 人気ゾーン
+    // 人気帯
     // =========================
 
     if(wRank >= 4 && wRank <= 9){
@@ -356,35 +365,40 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         reasons.push(
             "<span class='bonus'>黄金期待値ゾーン</span>"
         );
+    }
 
-    }else if(wRank <= 3){
+    else if(wRank <= 3){
 
         BONUS *= 0.90;
 
         reasons.push(
             "<span class='penalty'>上位人気</span>"
         );
+    }
 
-    }else if(wRank >= 10){
+    else if(wRank >= 10){
 
-        BONUS *= 0.88;
+        if(curClass !== "G1"){
 
-        reasons.push(
-            "<span class='penalty'>人気薄</span>"
-        );
+            BONUS *= 0.90;
+
+            reasons.push(
+                "<span class='penalty'>人気薄</span>"
+            );
+        }
     }
 
     // =========================
-    // 人気密集補正
+    // 人気密集
     // =========================
 
     if(
         wRank >= 4 &&
         wRank <= 6 &&
-        wOdds < avgWin * 0.8
+        wOdds < stats.avgWinOdds[wRank] * 0.8
     ){
 
-        BONUS *= 0.90;
+        BONUS *= 0.92;
 
         reasons.push(
             "<span class='penalty'>人気密集</span>"
@@ -398,28 +412,48 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     if(jID === 'moreira'){
 
         BONUS *= 1.12;
+    }
 
-    }else if(jID === 'lane'){
+    else if(jID === 'lane' || jID === 'short_other'){
 
         BONUS *= 1.08;
+    }
 
-    }else if(jID === 'lemaire'){
+    else if(jID === 'lemaire'){
 
         BONUS *= 1.07;
 
         if(style === "先行" || style === "差し"){
+
             BONUS *= 1.04;
         }
+    }
 
-    }else if(jID === 'kawada'){
+    else if(jID === 'kawada'){
 
         BONUS *= 1.07;
 
         if(style === "先行"){
+
             BONUS *= 1.05;
         }
+    }
 
-    }else if(jID === 'take'){
+    else if(jID === 'iwata_y'){
+
+        BONUS *= 1.05;
+
+        if(waku <= 2){
+
+            BONUS *= 1.10;
+
+            reasons.push(
+                "<span class='bonus'>岩田康×内枠</span>"
+            );
+        }
+    }
+
+    else if(jID === 'take'){
 
         BONUS *= 1.05;
 
@@ -440,44 +474,9 @@ document.getElementById('calc_v17').addEventListener('click', function() {
                 "<span class='bonus'>武豊×長距離</span>"
             );
         }
+    }
 
-    }else if(jID === 'iwata_y'){
-
-        BONUS *= 1.05;
-
-        if(waku <= 2){
-
-            BONUS *= 1.10;
-
-            reasons.push(
-                "<span class='bonus'>岩田康×内枠</span>"
-            );
-        }
-
-        if(style === "差し" || style === "追込"){
-
-            BONUS *= 1.04;
-        }
-
-    }else if(jID === 'sugawara'){
-
-        BONUS *= 1.04;
-
-        if(style === "差し" || style === "追込"){
-
-            BONUS *= 1.05;
-        }
-
-        if(curCond === "重" || curCond === "不良"){
-
-            BONUS *= 1.05;
-
-            reasons.push(
-                "<span class='bonus'>菅原明×道悪</span>"
-            );
-        }
-
-    }else if(jID === 'sakai_ryusei'){
+    else if(jID === 'sakai'){
 
         BONUS *= 1.05;
 
@@ -491,13 +490,44 @@ document.getElementById('calc_v17').addEventListener('click', function() {
             BONUS *= 1.08;
         }
 
-    }else if(jID === 'tosaki'){
+        if(surface === "芝" && curClass === "G1"){
+
+            BONUS *= 0.94;
+        }
+    }
+
+    else if(jID === 'sugawara'){
+
+        BONUS *= 1.04;
+
+        if(style === "差し" || style === "追込"){
+
+            BONUS *= 1.05;
+        }
+
+        if(curCond === "重" || curCond === "不良"){
+
+            BONUS *= 1.05;
+        }
+    }
+
+    else if(jID === 'tosaki'){
 
         BONUS *= 1.04;
 
         if(style === "先行"){
 
-            BONUS *= 1.03;
+            BONUS *= 1.04;
+        }
+    }
+
+    else if(jID === 'tannai'){
+
+        BONUS *= 1.04;
+
+        if(dist === "long"){
+
+            BONUS *= 1.05;
         }
     }
 
@@ -507,7 +537,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
     if(g1 >= 1){
 
-        BONUS *= (1 + (g1 * 0.03));
+        BONUS *= (1 + (g1 * 0.025));
 
         reasons.push(
             "<span class='bonus'>G1経験</span>"
@@ -520,7 +550,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
     if(p3 <= 10){
 
-        BONUS *= 1.05;
+        BONUS *= 1.04;
 
         reasons.push(
             "<span class='bonus'>近走人気安定</span>"
@@ -533,7 +563,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
 
     if(coreHit >= 4){
 
-        BONUS *= 1.08;
+        BONUS *= 1.06;
 
         reasons.push(
             "<span class='bonus'>CORE複数一致</span>"
@@ -553,9 +583,9 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     // BONUS上限
     // =========================
 
-    if(BONUS > 1.80){
+    if(BONUS > 1.75){
 
-        BONUS = 1.80;
+        BONUS = 1.75;
     }
 
     // =========================
@@ -580,7 +610,7 @@ document.getElementById('calc_v17').addEventListener('click', function() {
     // =========================
 
     if(
-        fs >= 380 &&
+        fs >= 360 &&
         coreHit >= 3 &&
         wRank >= 4 &&
         wRank <= 9
@@ -589,29 +619,32 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         resArea.className = "sl-result rank-1";
 
         resMain.innerHTML =
-            "🔥 激アツ期待値馬<br><small>全券種で購入推奨</small>";
+        "🔥 激アツ期待値馬<br><small>全券種で購入推奨</small>";
 
         resMain.style.color = "#ff0000";
+    }
 
-    }else if(fs >= 280){
+    else if(fs >= 270){
 
         resArea.className = "sl-result";
 
         resMain.innerHTML =
-            "◎ 高期待値馬<br><small>1〜2着候補・連軸向き</small>";
+        "◎ 高期待値馬<br><small>1〜2着候補・連軸推奨</small>";
 
         resMain.style.color = "#ffe066";
+    }
 
-    }else if(fs >= 210){
+    else if(fs >= 200){
 
         resArea.className = "sl-result";
 
         resMain.innerHTML =
-            "○ 相手候補<br><small>3連系で押さえたい</small>";
+        "○ 相手候補<br><small>2〜3着候補・3連系向き</small>";
 
         resMain.style.color = "#7fd1ff";
+    }
 
-    }else if(
+    else if(
         wRank <= 3 &&
         fs >= 170 &&
         coreHit <= 2
@@ -620,23 +653,20 @@ document.getElementById('calc_v17').addEventListener('click', function() {
         resArea.className = "sl-result";
 
         resMain.innerHTML =
-            "▲ 実力ある低期待値馬<br><small>単体購入は非推奨</small>";
+        "▲ 実力ある低期待値馬<br><small>単体購入は非推奨</small>";
 
         resMain.style.color = "#ff9f43";
+    }
 
-    }else{
+    else{
 
         resArea.className = "sl-result";
 
         resMain.innerHTML =
-            "✕ 見送り<br><small>期待値的に非推奨</small>";
+        "✕ 見送り<br><small>期待値的に非推奨</small>";
 
         resMain.style.color = "#999";
     }
-
-    resMain.style.fontSize = "30px";
-    resMain.style.fontWeight = "bold";
-    resMain.style.lineHeight = "1.5";
 
     resArea.scrollIntoView({
         behavior:'smooth',
@@ -653,16 +683,12 @@ document.getElementById('reset_v17').addEventListener('click', function() {
 
     const selects = document.querySelectorAll('select');
 
-    selects.forEach(function(s){
-        s.selectedIndex = 0;
-    });
+    selects.forEach(s => s.selectedIndex = 0);
 
     const inputs =
         document.querySelectorAll('input[type="number"]');
 
-    inputs.forEach(function(i){
-        i.value = '';
-    });
+    inputs.forEach(i => i.value = '');
 
     document.getElementById('res_v17').style.display = 'none';
 
