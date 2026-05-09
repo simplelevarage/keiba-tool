@@ -1,8 +1,53 @@
 <!DOCTYPE html>
 <html>
-<body>
+<body style="font-family:sans-serif;padding:30px;">
 
-<h1>表示テスト</h1>
+<h1>競馬期待値ツール</h1>
+
+<select id="rank">
+<option value="">選択</option>
+<option value="1">1人気</option>
+<option value="5">5人気</option>
+</select>
+
+<br><br>
+
+<button id="btn">
+判定
+</button>
+
+<div id="result"
+style="
+margin-top:20px;
+font-size:30px;
+font-weight:bold;
+">
+</div>
+
+<script>
+
+document.getElementById("btn").onclick =
+function(){
+
+    var rank =
+        document.getElementById("rank").value;
+
+    var text = "";
+
+    if(rank == "5"){
+
+        text = "🔥 激アツ";
+
+    }else{
+
+        text = "✕ 見送り";
+    }
+
+    document.getElementById("result").innerHTML =
+        text;
+};
+
+</script>
 
 </body>
 </html>
